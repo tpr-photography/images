@@ -1,0 +1,70 @@
+name: Generate Gallery JSON
+
+on:
+  push:
+    paths:
+      - 'weddings/**'
+      - 'preweddings/**'
+      - 'birthdays/**'
+      - 'halfsarees/**'
+      - 'dhoti/**'
+      - 'realestate/**'
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+
+      - name: Generate gallery.json
+        run: |
+          echo '{' > gallery.json
+          first_category=true
+
+          for dir in weddings preweddings birthdays halfsarees dhoti realestate; do
+            if [ -d "$dir" ]; then
+
+              mapfile -t files < <(
+                find "$dir" -maxdepth 1 -type f \
+                  \( -iname "*.jpg" -o -iname "*.jpeg" -o -iname "*.png" -o -iname "*.webp" -o -iname "*.gif" \) \
+                  -printf "%f\n" | sort
+              )
+
+              if [ ${#files[@]} -gt 0 ]; then
+                if [ "$first_category" = false ]; then
+                  echo ',' >> gallery.json
+                fi
+                first_category=false
+
+                echo "  \"$dir\": [" >> gallery.json
+
+                for i in "${!files[@]}"; do
+                  if [ $i -ne 0 ]; then
+                    echo ',' >> gallery.json
+                  fi
+                  echo "    \"${files[$i]}\"" >> gallery.json
+                done
+
+                echo '' >> gallery.json
+                echo '  ]' >> gallery.json
+              fi
+            fi
+          done
+
+          echo '' >> gallery.json
+          echo '}' >> gallery.json
+
+      - name: Commit gallery.json
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions@users.noreply.github.com"
+          git add gallery.json
+          git commit -m "Auto-update gallery.json" || echo "No changes to commit"
+          git push

@@ -8,7 +8,7 @@ on:
       - 'birthdays/**'
       - 'halfsarees/**'
       - 'dhoti/**'
-      - 'realestate/**'
+      - 'maternity/**'
 
 permissions:
   contents: write
@@ -28,7 +28,7 @@ jobs:
           echo '{' > gallery.json
           first_category=true
 
-          for dir in weddings preweddings birthdays halfsarees dhoti realestate; do
+          for dir in weddings preweddings birthdays halfsarees dhoti maternity; do
             if [ -d "$dir" ]; then
 
               mapfile -t files < <(
